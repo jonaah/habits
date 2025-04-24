@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../services/habit_database.dart';
+import '../services/event_bus.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_card.dart';
 import 'habit_form_screen.dart';
@@ -14,6 +15,7 @@ class AllHabitsScreen extends StatefulWidget {
 
 class _AllHabitsScreenState extends State<AllHabitsScreen> {
   late HabitDatabase _database;
+  late EventBus _eventBus;
   List<Habit> _habits = [];
   bool _isLoading = true;
 
@@ -21,7 +23,13 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
   void initState() {
     super.initState();
     _database = HabitDatabase();
+    _eventBus = EventBus();
     _loadHabits();
+
+    // Listen for habit changes
+    _eventBus.habitEvents.listen((event) {
+      _loadHabits();
+    });
   }
 
   Future<void> _loadHabits() async {
@@ -30,7 +38,7 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
     });
 
     final habits = _database.getAllHabits();
-    
+
     setState(() {
       _habits = habits;
       _isLoading = false;
@@ -39,7 +47,7 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
 
   Future<void> _deleteHabit(String id) async {
     await _database.deleteHabit(id);
-    _loadHabits();
+    // _loadHabits() wird jetzt über den EventBus aufgerufen
   }
 
   @override
@@ -57,7 +65,7 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
               builder: (context) => const HabitFormScreen(),
             ),
           );
-          
+
           if (result == true) {
             _loadHabits();
           }
@@ -147,7 +155,7 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
                   builder: (context) => HabitFormScreen(habit: habit),
                 ),
               );
-              
+
               if (result == true) {
                 _loadHabits();
               }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../models/habit.dart';
 import '../services/habit_database.dart';
+import '../services/event_bus.dart';
 import '../theme/app_theme.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -14,6 +15,9 @@ class CalendarScreen extends StatefulWidget {
 
 class _CalendarScreenState extends State<CalendarScreen> {
   late HabitDatabase _database;
+  late EventBus _eventBus;
+  List<Habit> _habits = [];
+  bool _isLoading = true;
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   Map<DateTime, List<Habit>> _completedHabits = {};
@@ -22,15 +26,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _database = HabitDatabase();
+    _eventBus = EventBus();
     _loadHabits();
+
+    // Listen for habit changes
+    _eventBus.habitEvents.listen((event) {
+      _loadHabits();
+    });
   }
 
   Future<void> _loadHabits() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final habits = _database.getAllHabits();
-    
+
     // Create a map of completed habits by date
     final Map<DateTime, List<Habit>> completedMap = {};
-    
+
     for (final habit in habits) {
       for (final date in habit.completedDates) {
         final dateWithoutTime = DateTime(date.year, date.month, date.day);
@@ -38,9 +52,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         completedMap[dateWithoutTime]!.add(habit);
       }
     }
-    
+
     setState(() {
+      _habits = habits;
       _completedHabits = completedMap;
+      _isLoading = false;
     });
   }
 
@@ -105,7 +121,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       calendarBuilders: CalendarBuilders(
         markerBuilder: (context, date, events) {
           if (events.isEmpty) return null;
-          
+
           return Positioned(
             bottom: 1,
             child: Container(
@@ -120,8 +136,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     height: 6,
                     decoration: BoxDecoration(
                       color: index < 3
-                        ? AppTheme.primaryColor 
-                        : AppTheme.accentColor,
+                          ? AppTheme.primaryColor
+                          : AppTheme.accentColor,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -136,7 +152,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildHabitList() {
     final habitsForSelectedDay = _getHabitsForDay(_selectedDay);
-    
+
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
     if (habitsForSelectedDay.isEmpty) {
       return Center(
         child: Column(
@@ -156,7 +178,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
       );
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: habitsForSelectedDay.length,

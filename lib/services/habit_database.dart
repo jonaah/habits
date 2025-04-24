@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/habit.dart';
 import '../utils/icon_data_adapter.dart';
+import 'event_bus.dart';
 
 class HabitDatabase {
   // Box names
   static const String _habitBoxName = 'habits';
   static const String _versionBoxName = 'app_version';
   static const int _currentVersion = 2; // Increase this when model changes
+  
+  // EventBus für State-Updates
+  final _eventBus = EventBus();
   
   // Singleton pattern
   static final HabitDatabase _instance = HabitDatabase._internal();
@@ -84,18 +88,21 @@ class HabitDatabase {
   Future<void> addHabit(Habit habit) async {
     final box = Hive.box<Habit>(_habitBoxName);
     await box.put(habit.id, habit);
+    _eventBus.fireHabitEvent(HabitEvent.habitAdded);
   }
   
   // Update an existing habit
   Future<void> updateHabit(Habit habit) async {
     final box = Hive.box<Habit>(_habitBoxName);
     await box.put(habit.id, habit);
+    _eventBus.fireHabitEvent(HabitEvent.habitUpdated);
   }
   
   // Delete a habit
   Future<void> deleteHabit(String id) async {
     final box = Hive.box<Habit>(_habitBoxName);
     await box.delete(id);
+    _eventBus.fireHabitEvent(HabitEvent.habitDeleted);
   }
   
   // Mark a habit as completed for today
@@ -106,6 +113,7 @@ class HabitDatabase {
     if (habit != null) {
       habit.markAsCompleted();
       await box.put(id, habit);
+      _eventBus.fireHabitEvent(HabitEvent.habitCompleted);
     }
   }
   
@@ -117,6 +125,7 @@ class HabitDatabase {
     if (habit != null) {
       habit.unmarkCompletion();
       await box.put(id, habit);
+      _eventBus.fireHabitEvent(HabitEvent.habitUncompleted);
     }
   }
 }

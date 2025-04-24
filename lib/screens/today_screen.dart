@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../services/habit_database.dart';
+import '../services/event_bus.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_card.dart';
 import 'habit_form_screen.dart';
@@ -14,6 +15,7 @@ class TodayScreen extends StatefulWidget {
 
 class _TodayScreenState extends State<TodayScreen> {
   late HabitDatabase _database;
+  late EventBus _eventBus;
   List<Habit> _todayHabits = [];
   bool _isLoading = true;
 
@@ -21,7 +23,14 @@ class _TodayScreenState extends State<TodayScreen> {
   void initState() {
     super.initState();
     _database = HabitDatabase();
+    _eventBus = EventBus();
     _loadTodayHabits();
+
+    // Listen for habit changes
+    _eventBus.habitEvents.listen((event) {
+      // Aktualisiere die Ansicht, wenn ein Habit-Event empfangen wird
+      _loadTodayHabits();
+    });
   }
 
   Future<void> _loadTodayHabits() async {
@@ -30,7 +39,7 @@ class _TodayScreenState extends State<TodayScreen> {
     });
 
     final habits = _database.getTodayHabits();
-    
+
     setState(() {
       _todayHabits = habits;
       _isLoading = false;
@@ -43,17 +52,18 @@ class _TodayScreenState extends State<TodayScreen> {
     } else {
       await _database.unmarkHabitCompletion(habit.id);
     }
-    
-    _loadTodayHabits();
+
+    // Da der EventBus jetzt die _loadTodayHabits()-Methode auslöst, ist dieser Aufruf nicht mehr nötig
+    // _loadTodayHabits();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(child:Text('Heute')),
+        title: const Center(child: Text('Heute')),
         centerTitle: true,
-          ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildContent(),
@@ -102,7 +112,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 builder: (context) => HabitFormScreen(habit: habit),
               ),
             );
-            
+
             if (result == true) {
               _loadTodayHabits();
             }
