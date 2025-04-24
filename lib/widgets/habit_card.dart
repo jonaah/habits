@@ -1,36 +1,39 @@
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../theme/app_theme.dart';
+import '../services/habit_database.dart';
 
 class HabitCard extends StatelessWidget {
   final Habit habit;
-  final bool isToday;
+  final bool isToday;  // Gibt an, ob Checkboxen erlaubt sind (für Vergangenheit und heute)
   final Function(bool) onToggle;
   final VoidCallback onEdit;
-  
+  final DateTime? date;  // Optionales Datum für die Anzeige
+
   const HabitCard({
     Key? key,
     required this.habit,
     this.isToday = false,
     required this.onToggle,
     required this.onEdit,
+    this.date,
   }) : super(key: key);
 
-  bool _isCompletedToday() {
+  bool _isCompletedOnDate() {
     if (habit.completedDates.isEmpty) return false;
     
-    final today = DateTime.now();
-    final todayWithoutTime = DateTime(today.year, today.month, today.day);
+    final checkDate = date ?? DateTime.now();
+    final dateWithoutTime = DateTime(checkDate.year, checkDate.month, checkDate.day);
     
     return habit.completedDates.any((date) {
-      final dateWithoutTime = DateTime(date.year, date.month, date.day);
-      return dateWithoutTime.isAtSameMomentAs(todayWithoutTime);
+      final completionDateWithoutTime = DateTime(date.year, date.month, date.day);
+      return completionDateWithoutTime.isAtSameMomentAs(dateWithoutTime);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = _isCompletedToday();
+    final isCompleted = _isCompletedOnDate();
     final habitColor = habit.color ?? AppTheme.primaryColor;
     
     return Card(

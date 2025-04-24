@@ -6,10 +6,15 @@ import 'package:habits/screens/today_screen.dart';
 import 'package:habits/theme/app_theme.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart' as path;
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialisiere Lokalisierungsdaten für Datumsformatierungen
+  await initializeDateFormatting('de_DE');
   
   // Initialisiere Hive
   await Hive.initFlutter();
