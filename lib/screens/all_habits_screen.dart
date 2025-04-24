@@ -147,7 +147,7 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
           onDismissed: (_) => _deleteHabit(habit.id),
           child: HabitCard(
             habit: habit,
-            onToggle: (_) {},
+            onToggle: (_) {}, // In der All Habits Screen ist die Toggle-Funktion nicht relevant
             onEdit: () async {
               final result = await Navigator.push(
                 context,
@@ -160,6 +160,8 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
                 _loadHabits();
               }
             },
+            isEditable: true, // Explizit auf true setzen, obwohl das der Standardwert ist
+            isToday: false, // Keine Checkbox anzeigen in der All Habits Ansicht
           ),
         );
       },

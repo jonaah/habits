@@ -221,19 +221,8 @@ class _TodayScreenState extends State<TodayScreen> {
           habit: habit,
           isToday: !_isFutureDate(_selectedDate), // Checkbox nur für Vergangenheit und Heute anzeigen
           onToggle: (completed) => _toggleHabit(habit, completed),
-          date: _selectedDate, // Übergebe das ausgewählte Datum
-          onEdit: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HabitFormScreen(habit: habit),
-              ),
-            );
-
-            if (result == true) {
-              _loadHabitsForDate(_selectedDate);
-            }
-          },
+          date: _selectedDate,
+          isEditable: false, // Karten sind nicht bearbeitbar auf der TodayScreen
         );
       },
     );

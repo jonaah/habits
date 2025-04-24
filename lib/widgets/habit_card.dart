@@ -7,16 +7,18 @@ class HabitCard extends StatelessWidget {
   final Habit habit;
   final bool isToday;  // Gibt an, ob Checkboxen erlaubt sind (für Vergangenheit und heute)
   final Function(bool) onToggle;
-  final VoidCallback onEdit;
+  final VoidCallback? onEdit; // Optional, kann null sein wenn nicht bearbeitbar
   final DateTime? date;  // Optionales Datum für die Anzeige
+  final bool isEditable; // Gibt an, ob die Karte bearbeitbar ist
 
   const HabitCard({
     Key? key,
     required this.habit,
     this.isToday = false,
     required this.onToggle,
-    required this.onEdit,
+    this.onEdit,
     this.date,
+    this.isEditable = true,
   }) : super(key: key);
 
   bool _isCompletedOnDate() {
@@ -47,33 +49,43 @@ class HabitCard extends StatelessWidget {
             )
           : null,
       child: InkWell(
-        onTap: () => onEdit(),
+        onTap: isToday 
+            ? () => onToggle(!isCompleted) // Ganzen Card klickbar für Toggle
+            : onEdit, // Nur bearbeitbar, wenn nicht heute oder nicht isEditable=false
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              // Icon or checkbox
-              isToday
-                ? Checkbox(
-                    value: isCompleted,
-                    onChanged: (value) => onToggle(value ?? false),
-                    activeColor: habitColor,
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      color: habit.icon != null ? habitColor.withOpacity(0.1) : null,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: habit.icon != null
+              // Icon oder Checkbox-Anzeige (keine interaktive Checkbox mehr)
+              Container(
+                decoration: BoxDecoration(
+                  color: isToday && isCompleted 
+                      ? habitColor.withOpacity(0.2) 
+                      : (habit.icon != null ? habitColor.withOpacity(0.1) : null),
+                  borderRadius: BorderRadius.circular(8),
+                  border: isToday 
+                      ? Border.all(
+                          color: habitColor,
+                          width: 2,
+                        ) 
+                      : null,
+                ),
+                padding: const EdgeInsets.all(8),
+                child: isToday && isCompleted
+                    ? Icon(
+                        Icons.check,
+                        color: habitColor,
+                        size: 24,
+                      )
+                    : (habit.icon != null
                         ? Icon(
                             habit.icon,
                             color: habitColor,
                             size: 24,
                           )
-                        : null,
-                  ),
+                        : null),
+              ),
               const SizedBox(width: 16),
               
               // Habit details
@@ -138,6 +150,14 @@ class HabitCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                
+              // Bearbeitungs-Icon nur anzeigen, wenn bearbeitbar und onEdit vorhanden
+              if (isEditable && onEdit != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  color: AppTheme.subtitleColor,
+                  onPressed: onEdit,
                 ),
             ],
           ),
