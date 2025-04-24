@@ -39,7 +39,7 @@ class HabitCard extends StatelessWidget {
     final habitColor = habit.color ?? AppTheme.primaryColor;
     
     return Card(
-      color: isCompleted && isToday ? Colors.grey[250] : null, // Leicht ausgrauen bei erledigten Habits
+      color: isCompleted && isToday ? const Color.fromARGB(255, 212, 212, 212) : null, // Leicht ausgrauen bei erledigten Habits
       shape: habit.color != null
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
