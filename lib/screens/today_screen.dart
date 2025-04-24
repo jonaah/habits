@@ -40,6 +40,34 @@ class _TodayScreenState extends State<TodayScreen> {
 
     final habits = _database.getTodayHabits();
 
+    // Habits nach Erledigungsstatus sortieren (unerledigte zuerst, erledigte am Ende)
+    habits.sort((a, b) {
+      // Überprüfen, ob der Habit heute erledigt wurde
+      bool isACompleted = a.completedDates.any((date) {
+        final today = DateTime.now();
+        final todayWithoutTime = DateTime(today.year, today.month, today.day);
+        final dateWithoutTime = DateTime(date.year, date.month, date.day);
+        return dateWithoutTime.isAtSameMomentAs(todayWithoutTime);
+      });
+
+      bool isBCompleted = b.completedDates.any((date) {
+        final today = DateTime.now();
+        final todayWithoutTime = DateTime(today.year, today.month, today.day);
+        final dateWithoutTime = DateTime(date.year, date.month, date.day);
+        return dateWithoutTime.isAtSameMomentAs(todayWithoutTime);
+      });
+
+      // Wenn einer erledigt und der andere nicht erledigt ist, sortiere entsprechend
+      if (isACompleted && !isBCompleted) {
+        return 1; // A nach B sortieren (erledigte nach unten)
+      } else if (!isACompleted && isBCompleted) {
+        return -1; // A vor B sortieren (unerledigte nach oben)
+      }
+      
+      // Wenn beide den gleichen Status haben, sortiere alphabetisch nach Titel
+      return a.title.compareTo(b.title);
+    });
+
     setState(() {
       _todayHabits = habits;
       _isLoading = false;
