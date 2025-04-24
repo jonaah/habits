@@ -31,10 +31,21 @@ class HabitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompleted = _isCompletedToday();
+    final habitColor = habit.color ?? AppTheme.primaryColor;
     
     return Card(
+      shape: habit.color != null
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: habitColor.withOpacity(0.8),
+                width: 2,
+              ),
+            )
+          : null,
       child: InkWell(
         onTap: () => onEdit(),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -44,17 +55,18 @@ class HabitCard extends StatelessWidget {
                 ? Checkbox(
                     value: isCompleted,
                     onChanged: (value) => onToggle(value ?? false),
+                    activeColor: habitColor,
                   )
                 : Container(
                     decoration: BoxDecoration(
-                      color: habit.icon != null ? AppTheme.primaryColor.withOpacity(0.1) : null,
+                      color: habit.icon != null ? habitColor.withOpacity(0.1) : null,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     padding: const EdgeInsets.all(8),
                     child: habit.icon != null
                         ? Icon(
                             habit.icon,
-                            color: AppTheme.primaryColor,
+                            color: habitColor,
                             size: 24,
                           )
                         : null,
@@ -100,22 +112,24 @@ class HabitCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.streakColor.withOpacity(0.1),
+                    color: habit.color != null 
+                        ? habitColor.withOpacity(0.1)
+                        : AppTheme.streakColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.local_fire_department,
-                        color: AppTheme.streakColor,
+                        color: habit.color != null ? habitColor : AppTheme.streakColor,
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${habit.streak}',
-                        style: const TextStyle(
-                          color: AppTheme.streakColor,
+                        style: TextStyle(
+                          color: habit.color != null ? habitColor : AppTheme.streakColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

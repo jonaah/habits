@@ -3,6 +3,7 @@ import '../models/habit.dart';
 import '../services/habit_database.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_icon_picker.dart';
+import '../widgets/custom_color_picker.dart';
 
 class HabitFormScreen extends StatefulWidget {
   final Habit? habit;
@@ -20,12 +21,16 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   final _customDaysController = TextEditingController();
   final _dayOfMonthController = TextEditingController();
   final _categoryController = TextEditingController();
+  final _timesPerWeekController = TextEditingController();
   
   IconData? _selectedIcon;
+  Color? _selectedColor;
   FrequencyType _frequencyType = FrequencyType.daily;
   final List<int> _selectedDays = [];
   int _customDays = 1;
   int _dayOfMonth = 1;
+  int _timesPerWeek = 1;
+  CustomFrequencyType? _customFrequencyType;
 
   late HabitDatabase _database;
   
@@ -40,6 +45,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       _titleController.text = habit.title;
       _descriptionController.text = habit.description;
       _selectedIcon = habit.icon;
+      _selectedColor = habit.color;
       _frequencyType = habit.frequency.type;
       
       if (habit.category != null) {
@@ -57,8 +63,14 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
           _dayOfMonthController.text = _dayOfMonth.toString();
           break;
         case FrequencyType.custom:
-          _customDays = habit.frequency.customDays;
-          _customDaysController.text = _customDays.toString();
+          _customFrequencyType = habit.frequency.customType;
+          if (_customFrequencyType == CustomFrequencyType.everyXDays) {
+            _customDays = habit.frequency.customDays;
+            _customDaysController.text = _customDays.toString();
+          } else if (_customFrequencyType == CustomFrequencyType.timesPerWeek) {
+            _timesPerWeek = habit.frequency.timesPerWeek;
+            _timesPerWeekController.text = _timesPerWeek.toString();
+          }
           break;
       }
     }
@@ -71,6 +83,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     _customDaysController.dispose();
     _dayOfMonthController.dispose();
     _categoryController.dispose();
+    _timesPerWeekController.dispose();
     super.dispose();
   }
 
@@ -80,6 +93,19 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     if (result != null) {
       setState(() {
         _selectedIcon = result;
+      });
+    }
+  }
+  
+  Future<void> _pickColor() async {
+    final Color? result = await CustomColorPicker.showColorPicker(
+      context,
+      currentColor: _selectedColor,
+    );
+    
+    if (result != null) {
+      setState(() {
+        _selectedColor = result;
       });
     }
   }
@@ -125,16 +151,43 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         frequency = HabitFrequency.monthly(day: day);
         break;
       case FrequencyType.custom:
-        final days = int.tryParse(_customDaysController.text) ?? 1;
-        if (days < 1) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Bitte gib eine positive Zahl ein'),
-            ),
+        if (_customFrequencyType == CustomFrequencyType.everyXDays) {
+          final days = int.tryParse(_customDaysController.text) ?? 1;
+          if (days < 1) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Bitte gib eine positive Zahl ein'),
+              ),
+            );
+            return;
+          }
+          frequency = HabitFrequency(
+            FrequencyType.custom,
+            [],
+            0,
+            days,
+            0,
+            CustomFrequencyType.everyXDays
           );
-          return;
+        } else {
+          final times = int.tryParse(_timesPerWeekController.text) ?? 1;
+          if (times < 1 || times > 7) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Bitte gib eine Zahl zwischen 1 und 7 ein'),
+              ),
+            );
+            return;
+          }
+          frequency = HabitFrequency(
+            FrequencyType.custom,
+            [],
+            0,
+            0,
+            times,
+            CustomFrequencyType.timesPerWeek
+          );
         }
-        frequency = HabitFrequency.custom(days: days);
         break;
     }
     
@@ -150,6 +203,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         widget.habit!.streak,
         widget.habit!.lastCompleted,
         List.from(widget.habit!.completedDates),
+        _selectedColor,
       );
       
       await _database.updateHabit(habit);
@@ -161,6 +215,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         frequency: frequency,
         icon: _selectedIcon,
         category: _categoryController.text.isNotEmpty ? _categoryController.text : null,
+        color: _selectedColor,
       );
       
       await _database.addHabit(habit);
@@ -217,28 +272,112 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
               ),
               const SizedBox(height: 16),
               
-              // Icon Picker
+              // Icon and Color Picker
               Row(
                 children: [
-                  const Text('Icon (optional):', style: AppTheme.titleStyle),
-                  const SizedBox(width: 16),
-                  InkWell(
-                    onTap: _pickIcon,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                  // Icon picker
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Icon:', style: AppTheme.titleStyle),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: _pickIcon,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _selectedColor?.withOpacity(0.1) ?? 
+                                   AppTheme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: _selectedIcon != null
+                              ? Icon(
+                                  _selectedIcon, 
+                                  size: 32, 
+                                  color: _selectedColor,
+                                )
+                              : const Icon(Icons.add, size: 32),
+                        ),
                       ),
-                      child: _selectedIcon != null
-                          ? Icon(_selectedIcon, size: 32)
-                          : const Icon(Icons.add, size: 32),
-                    ),
+                    ],
                   ),
-                  if (_selectedIcon != null)
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => setState(() => _selectedIcon = null),
+                  const SizedBox(width: 24),
+                  
+                  // Color picker
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Farbe:', style: AppTheme.titleStyle),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: _pickColor,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: _selectedColor ?? Colors.grey,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          child: _selectedColor == null
+                              ? const Icon(Icons.color_lens, color: Colors.white)
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  if (_selectedIcon != null || _selectedColor != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => setState(() {
+                          if (_selectedIcon != null && _selectedColor != null) {
+                            // Show dialog to ask what to clear
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Löschen'),
+                                content: const Text('Was möchtest du zurücksetzen?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() => _selectedIcon = null);
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Icon'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() => _selectedColor = null);
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Farbe'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedIcon = null;
+                                        _selectedColor = null;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Beides'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else if (_selectedIcon != null) {
+                            _selectedIcon = null;
+                          } else {
+                            _selectedColor = null;
+                          }
+                        }),
+                      ),
                     ),
                 ],
               ),
@@ -287,29 +426,32 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       segments: const [
         ButtonSegment(
           value: FrequencyType.daily,
-          label: Text('Täglich'),
           icon: Icon(Icons.calendar_today),
+          label: Text('Täglich'),
         ),
         ButtonSegment(
           value: FrequencyType.weekly,
-          label: Text('Wöchentlich'),
           icon: Icon(Icons.view_week),
+          label: Text('Wöchentlich'),
         ),
         ButtonSegment(
           value: FrequencyType.monthly,
-          label: Text('Monatlich'),
           icon: Icon(Icons.calendar_month),
+          label: Text('Monatlich'),
         ),
         ButtonSegment(
           value: FrequencyType.custom,
+          icon: Icon(Icons.settings),
           label: Text('Benutzerdefiniert'),
-          icon: Icon(Icons.tune),
         ),
       ],
       selected: {_frequencyType},
       onSelectionChanged: (Set<FrequencyType> selection) {
         setState(() {
           _frequencyType = selection.first;
+          if (_frequencyType == FrequencyType.custom && _customFrequencyType == null) {
+            _customFrequencyType = CustomFrequencyType.everyXDays; // Default to "Every X days" when custom is first selected
+          }
         });
       },
     );
@@ -327,7 +469,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         return _buildMonthlySelector();
         
       case FrequencyType.custom:
-        return _buildCustomDaysSelector();
+        return _buildCustomFrequencySelector();
     }
   }
   
@@ -390,6 +532,41 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     );
   }
   
+  Widget _buildCustomFrequencySelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Art der benutzerdefinierten Häufigkeit:'),
+        const SizedBox(height: 8),
+        SegmentedButton<CustomFrequencyType>(
+          segments: const [
+            ButtonSegment(
+              value: CustomFrequencyType.everyXDays,
+              icon: Icon(Icons.repeat),
+              label: Text('Alle X Tage'),
+            ),
+            ButtonSegment(
+              value: CustomFrequencyType.timesPerWeek,
+              icon: Icon(Icons.view_week),
+              label: Text('X mal pro Woche'),
+            ),
+          ],
+          selected: {_customFrequencyType ?? CustomFrequencyType.everyXDays},
+          onSelectionChanged: (Set<CustomFrequencyType> selection) {
+            setState(() {
+              _customFrequencyType = selection.first;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        if (_customFrequencyType == CustomFrequencyType.everyXDays)
+          _buildCustomDaysSelector()
+        else if (_customFrequencyType == CustomFrequencyType.timesPerWeek)
+          _buildTimesPerWeekSelector(),
+      ],
+    );
+  }
+  
   Widget _buildCustomDaysSelector() {
     return TextFormField(
       controller: _customDaysController,
@@ -405,6 +582,27 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         final days = int.tryParse(value);
         if (days == null || days < 1) {
           return 'Gib eine positive Zahl ein';
+        }
+        return null;
+      },
+    );
+  }
+  
+  Widget _buildTimesPerWeekSelector() {
+    return TextFormField(
+      controller: _timesPerWeekController,
+      decoration: const InputDecoration(
+        labelText: 'Wie oft pro Woche? (1-7)',
+        border: OutlineInputBorder(),
+      ),
+      keyboardType: TextInputType.number,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Bitte gib einen Wert ein';
+        }
+        final times = int.tryParse(value);
+        if (times == null || times < 1 || times > 7) {
+          return 'Gib eine Zahl zwischen 1 und 7 ein';
         }
         return null;
       },

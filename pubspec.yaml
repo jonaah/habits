@@ -18,6 +18,7 @@ dependencies:
   intl: ^0.19.0              # For date formatting
   flutter_iconpicker: ^4.0.1 # For picking icons
   table_calendar: ^3.0.9     # For calendar view
+  path_provider: ^2.1.2      # For accessing device file paths
 
 dev_dependencies:
   flutter_test:

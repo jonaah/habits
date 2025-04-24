@@ -26,13 +26,14 @@ class HabitAdapter extends TypeAdapter<Habit> {
       fields[6] as int,
       fields[7] as DateTime,
       (fields[8] as List).cast<DateTime>(),
+      fields[9] as Color?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Habit obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +51,9 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..writeByte(7)
       ..write(obj.lastCompleted)
       ..writeByte(8)
-      ..write(obj.completedDates);
+      ..write(obj.completedDates)
+      ..writeByte(9)
+      ..write(obj.color);
   }
 
   @override
@@ -79,13 +82,15 @@ class HabitFrequencyAdapter extends TypeAdapter<HabitFrequency> {
       (fields[1] as List).cast<int>(),
       fields[2] as int,
       fields[3] as int,
+      fields[4] as int,
+      fields[5] as CustomFrequencyType,
     );
   }
 
   @override
   void write(BinaryWriter writer, HabitFrequency obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.type)
       ..writeByte(1)
@@ -93,7 +98,11 @@ class HabitFrequencyAdapter extends TypeAdapter<HabitFrequency> {
       ..writeByte(2)
       ..write(obj.dayOfMonth)
       ..writeByte(3)
-      ..write(obj.customDays);
+      ..write(obj.customDays)
+      ..writeByte(4)
+      ..write(obj.timesPerWeek)
+      ..writeByte(5)
+      ..write(obj.customType);
   }
 
   @override
@@ -152,6 +161,45 @@ class FrequencyTypeAdapter extends TypeAdapter<FrequencyType> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is FrequencyTypeAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class CustomFrequencyTypeAdapter extends TypeAdapter<CustomFrequencyType> {
+  @override
+  final int typeId = 5;
+
+  @override
+  CustomFrequencyType read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return CustomFrequencyType.everyXDays;
+      case 1:
+        return CustomFrequencyType.timesPerWeek;
+      default:
+        return CustomFrequencyType.everyXDays;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, CustomFrequencyType obj) {
+    switch (obj) {
+      case CustomFrequencyType.everyXDays:
+        writer.writeByte(0);
+        break;
+      case CustomFrequencyType.timesPerWeek:
+        writer.writeByte(1);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CustomFrequencyTypeAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

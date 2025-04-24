@@ -4,9 +4,27 @@ import 'package:habits/services/habit_database.dart';
 import 'package:habits/screens/all_habits_screen.dart';
 import 'package:habits/screens/today_screen.dart';
 import 'package:habits/theme/app_theme.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart' as path;
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialisiere Hive
+  await Hive.initFlutter();
+  
+  // Lösche alle vorhandenen Boxen, da wir Schemaänderungen vorgenommen haben
+  try {
+    final dir = await path.getApplicationDocumentsDirectory();
+    final hivePath = Directory('${dir.path}/hive');
+    if (await hivePath.exists()) {
+      await hivePath.delete(recursive: true);
+      print('Datenbank erfolgreich gelöscht');
+    }
+  } catch (e) {
+    print('Fehler beim Löschen der Datenbank: $e');
+  }
   
   // Initialize the database
   final habitDatabase = HabitDatabase();

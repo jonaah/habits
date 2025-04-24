@@ -6,6 +6,8 @@ import '../utils/icon_data_adapter.dart';
 class HabitDatabase {
   // Box names
   static const String _habitBoxName = 'habits';
+  static const String _versionBoxName = 'app_version';
+  static const int _currentVersion = 2; // Increase this when model changes
   
   // Singleton pattern
   static final HabitDatabase _instance = HabitDatabase._internal();
@@ -24,9 +26,45 @@ class HabitDatabase {
     Hive.registerAdapter(HabitAdapter());
     Hive.registerAdapter(HabitFrequencyAdapter());
     Hive.registerAdapter(FrequencyTypeAdapter());
+    Hive.registerAdapter(CustomFrequencyTypeAdapter()); // Register CustomFrequencyType adapter
     Hive.registerAdapter(IconDataAdapter());
+    Hive.registerAdapter(ColorAdapter());
+    
+    // Check version and handle migrations
+    await _handleMigrations();
     
     // Open boxes
+    await Hive.openBox<Habit>(_habitBoxName);
+  }
+  
+  // Handle database migrations
+  Future<void> _handleMigrations() async {
+    // Open version box
+    final versionBox = await Hive.openBox<int>(_versionBoxName);
+    final currentDbVersion = versionBox.get('version') ?? 1;
+    
+    // If the stored version is less than the current version, we need to migrate
+    if (currentDbVersion < _currentVersion) {
+      // Delete and recreate the habits box to avoid compatibility issues
+      if (await Hive.boxExists(_habitBoxName)) {
+        await Hive.deleteBoxFromDisk(_habitBoxName);
+      }
+      
+      // Update version
+      await versionBox.put('version', _currentVersion);
+    }
+  }
+  
+  // Reset the database (for migration/debugging purposes)
+  Future<void> resetDatabase() async {
+    if (await Hive.boxExists(_habitBoxName)) {
+      await Hive.deleteBoxFromDisk(_habitBoxName);
+    }
+    
+    final versionBox = await Hive.openBox<int>(_versionBoxName);
+    await versionBox.put('version', _currentVersion);
+    
+    // Reopen the habits box
     await Hive.openBox<Habit>(_habitBoxName);
   }
   

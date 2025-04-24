@@ -32,6 +32,9 @@ class Habit {
 
   @HiveField(8)
   List<DateTime> completedDates;
+  
+  @HiveField(9)
+  Color? color;
 
   // Unnamed constructor required by Hive
   Habit(
@@ -44,6 +47,7 @@ class Habit {
     this.streak,
     this.lastCompleted,
     this.completedDates,
+    this.color,
   );
   
   // Named factory constructor for creating new habits
@@ -53,6 +57,7 @@ class Habit {
     required HabitFrequency frequency,
     IconData? icon,
     String? category,
+    Color? color,
     String? id,
   }) {
     return Habit(
@@ -65,6 +70,7 @@ class Habit {
       0,
       DateTime(2000), // Far in past as a default
       [],
+      color,
     );
   }
   
@@ -80,12 +86,22 @@ class Habit {
       case FrequencyType.monthly:
         return today.day == frequency.dayOfMonth;
       case FrequencyType.custom:
-        if (frequency.customDays == 0) return false;
-        if (completedDates.isEmpty) return true;
-        
-        final lastDate = completedDates.last;
-        final daysSinceCompletion = today.difference(lastDate).inDays;
-        return daysSinceCompletion >= frequency.customDays;
+        switch (frequency.customType) {
+          case CustomFrequencyType.everyXDays:
+            if (frequency.customDays == 0) return false;
+            if (completedDates.isEmpty) return true;
+            
+            final lastDate = completedDates.last;
+            final daysSinceCompletion = today.difference(lastDate).inDays;
+            return daysSinceCompletion >= frequency.customDays;
+          case CustomFrequencyType.timesPerWeek:
+            return completedDates
+                    .where((date) =>
+                        date.isAfter(today.subtract(Duration(days: today.weekday))) &&
+                        date.isBefore(today.add(Duration(days: 7 - today.weekday))))
+                    .length <
+                frequency.timesPerWeek;
+        }
     }
   }
 
@@ -184,24 +200,34 @@ class HabitFrequency {
   
   @HiveField(3)
   final int customDays; // Every X days
+  
+  @HiveField(4)
+  final int timesPerWeek; // X times per week
+  
+  @HiveField(5)
+  final CustomFrequencyType customType;
 
   // Unnamed constructor required by Hive
-  HabitFrequency(this.type, this.daysOfWeek, this.dayOfMonth, this.customDays);
+  HabitFrequency(this.type, this.daysOfWeek, this.dayOfMonth, this.customDays, this.timesPerWeek, this.customType);
 
   factory HabitFrequency.daily() {
-    return HabitFrequency(FrequencyType.daily, [], 0, 0);
+    return HabitFrequency(FrequencyType.daily, [], 0, 0, 0, CustomFrequencyType.everyXDays);
   }
 
   factory HabitFrequency.weekly({required List<int> days}) {
-    return HabitFrequency(FrequencyType.weekly, days, 0, 0);
+    return HabitFrequency(FrequencyType.weekly, days, 0, 0, 0, CustomFrequencyType.everyXDays);
   }
 
   factory HabitFrequency.monthly({required int day}) {
-    return HabitFrequency(FrequencyType.monthly, [], day, 0);
+    return HabitFrequency(FrequencyType.monthly, [], day, 0, 0, CustomFrequencyType.everyXDays);
   }
 
   factory HabitFrequency.custom({required int days}) {
-    return HabitFrequency(FrequencyType.custom, [], 0, days);
+    return HabitFrequency(FrequencyType.custom, [], 0, days, 0, CustomFrequencyType.everyXDays);
+  }
+  
+  factory HabitFrequency.timesPerWeek({required int times}) {
+    return HabitFrequency(FrequencyType.custom, [], 0, 0, times, CustomFrequencyType.timesPerWeek);
   }
   
   String getDisplayText() {
@@ -215,7 +241,12 @@ class HabitFrequency {
       case FrequencyType.monthly:
         return 'Monatlich: Tag $dayOfMonth';
       case FrequencyType.custom:
-        return 'Alle $customDays Tage';
+        switch (customType) {
+          case CustomFrequencyType.everyXDays:
+            return 'Alle $customDays Tage';
+          case CustomFrequencyType.timesPerWeek:
+            return '$timesPerWeek Mal pro Woche';
+        }
     }
   }
   
@@ -246,4 +277,13 @@ enum FrequencyType {
   
   @HiveField(3)
   custom
+}
+
+@HiveType(typeId: 5)
+enum CustomFrequencyType {
+  @HiveField(0)
+  everyXDays,
+  
+  @HiveField(1)
+  timesPerWeek
 }

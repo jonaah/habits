@@ -9,13 +9,13 @@ class IconDataAdapter extends TypeAdapter<IconData> {
   IconData read(BinaryReader reader) {
     final codePoint = reader.readInt();
     final fontFamily = reader.readString();
-    final fontPackage = reader.readString();
+    final fontPackage = reader.readString().isEmpty ? null : reader.readString();
     final matchTextDirection = reader.readBool();
-
+    
     return IconData(
       codePoint,
-      fontFamily: fontFamily.isNotEmpty ? fontFamily : null,
-      fontPackage: fontPackage.isNotEmpty ? fontPackage : null,
+      fontFamily: fontFamily.isEmpty ? null : fontFamily,
+      fontPackage: fontPackage,
       matchTextDirection: matchTextDirection,
     );
   }
@@ -26,5 +26,21 @@ class IconDataAdapter extends TypeAdapter<IconData> {
     writer.writeString(obj.fontFamily ?? '');
     writer.writeString(obj.fontPackage ?? '');
     writer.writeBool(obj.matchTextDirection);
+  }
+}
+
+class ColorAdapter extends TypeAdapter<Color> {
+  @override
+  final typeId = 4;
+
+  @override
+  Color read(BinaryReader reader) {
+    final value = reader.readInt();
+    return Color(value);
+  }
+
+  @override
+  void write(BinaryWriter writer, Color obj) {
+    writer.writeInt(obj.value);
   }
 }
