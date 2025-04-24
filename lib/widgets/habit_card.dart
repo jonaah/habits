@@ -39,6 +39,7 @@ class HabitCard extends StatelessWidget {
     final habitColor = habit.color ?? AppTheme.primaryColor;
     
     return Card(
+      color: isCompleted && isToday ? Colors.grey[250] : null, // Leicht ausgrauen bei erledigten Habits
       shape: habit.color != null
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -53,12 +54,19 @@ class HabitCard extends StatelessWidget {
             ? () => onToggle(!isCompleted) // Ganzen Card klickbar für Toggle
             : onEdit, // Nur bearbeitbar, wenn nicht heute oder nicht isEditable=false
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(16.0),
+          // Konsistente Höhe definieren
+          constraints: const BoxConstraints(
+            minHeight: 90, // Mindesthöhe für einheitliches Erscheinungsbild
+          ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start, // Ausrichtung am oberen Rand
             children: [
-              // Icon oder Checkbox-Anzeige (keine interaktive Checkbox mehr)
+              // Icon oder Checkbox-Anzeige (fixe Größe für Konsistenz)
               Container(
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: isToday && isCompleted 
                       ? habitColor.withOpacity(0.2) 
@@ -71,7 +79,7 @@ class HabitCard extends StatelessWidget {
                         ) 
                       : null,
                 ),
-                padding: const EdgeInsets.all(8),
+                alignment: Alignment.center,
                 child: isToday && isCompleted
                     ? Icon(
                         Icons.check,
@@ -88,77 +96,109 @@ class HabitCard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               
-              // Habit details
+              // Habit details mit strikter Begrenzung
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      habit.title,
-                      style: AppTheme.titleStyle.copyWith(
-                        decoration: isToday && isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      habit.frequency.getDisplayText(),
-                      style: AppTheme.subtitleStyle,
-                    ),
-                    if (habit.description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        habit.description,
-                        style: AppTheme.bodyStyle.copyWith(
-                          fontSize: 14,
-                          color: Colors.black87,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Diese beiden Konstanten stellen sicher, dass wir korrekte Breiten haben
+                    final maxTextWidth = constraints.maxWidth;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min, // Kompakte Darstellung
+                      children: [
+                        // Titel mit fester Breite und Ellipsis
+                        SizedBox(
+                          width: maxTextWidth,
+                          child: Text(
+                            habit.title,
+                            style: AppTheme.titleStyle.copyWith(
+                              decoration: isToday && isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
+                        const SizedBox(height: 4),
+                        // Frequenz mit fester Breite und Ellipsis
+                        SizedBox(
+                          width: maxTextWidth,
+                          child: Text(
+                            habit.frequency.getDisplayText(),
+                            style: AppTheme.subtitleStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (habit.description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          // Beschreibung mit fester Breite und Ellipsis - nur eine Zeile
+                          SizedBox(
+                            width: maxTextWidth,
+                            child: Text(
+                              habit.description,
+                              style: AppTheme.bodyStyle.copyWith(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1, // Auf eine Zeile begrenzt (vorher: 2)
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
               ),
               
-              // Streak indicator
-              if (habit.streak > 0)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: habit.color != null 
-                        ? habitColor.withOpacity(0.1)
-                        : AppTheme.streakColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.local_fire_department,
-                        color: habit.color != null ? habitColor : AppTheme.streakColor,
-                        size: 16,
+              // Streak indicator und Edit Button in einer Column
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Streak indicator
+                  if (habit.streak > 0)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: habit.color != null 
+                            ? habitColor.withOpacity(0.1)
+                            : AppTheme.streakColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${habit.streak}',
-                        style: TextStyle(
-                          color: habit.color != null ? habitColor : AppTheme.streakColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            color: habit.color != null ? habitColor : AppTheme.streakColor,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${habit.streak}',
+                            style: TextStyle(
+                              color: habit.color != null ? habitColor : AppTheme.streakColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                
-              // Bearbeitungs-Icon nur anzeigen, wenn bearbeitbar und onEdit vorhanden
-              if (isEditable && onEdit != null)
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  color: AppTheme.subtitleColor,
-                  onPressed: onEdit,
-                ),
+                    ),
+                    
+                  // Bearbeitungs-Icon nur anzeigen, wenn bearbeitbar und onEdit vorhanden
+                  if (isEditable && onEdit != null)
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      color: AppTheme.subtitleColor,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: onEdit,
+                    ),
+                ],
+              ),
             ],
           ),
         ),
