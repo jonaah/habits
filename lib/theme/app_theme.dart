@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Colors
-  static const Color primaryColor = Color(0xFF4A90E2);
+  static const Color primaryColor = Color.fromARGB(255, 98, 127, 160);
   static const Color secondaryColor = Color(0xFF50E3C2);
   static const Color accentColor = Color(0xFFFF9500);
   static const Color backgroundColor = Color(0xFFF5F5F7);
@@ -58,7 +58,7 @@ class AppTheme {
         margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: primaryColor,
+        backgroundColor: Color.fromARGB(255, 108, 135, 167),
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(
