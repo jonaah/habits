@@ -35,11 +35,88 @@ class CustomIconPicker {
     Icons.auto_stories,
     Icons.eco,
     Icons.emoji_emotions,
+    // Zusätzliche Icons
+    Icons.work,
+    Icons.local_grocery_store,
+    Icons.train,
+    Icons.flight,
+    Icons.directions_bike,
+    Icons.pool,
+    Icons.theaters,
+    Icons.local_hospital,
+    Icons.local_pharmacy,
+    Icons.local_pizza,
+    Icons.beach_access,
+    Icons.casino,
+    Icons.celebration,
+    Icons.extension,
+    Icons.memory,
+    Icons.security,
+    Icons.verified_user,
+    Icons.vpn_key,
+    Icons.fingerprint,
+    Icons.headset,
+    Icons.toys,
+    Icons.construction,
+    Icons.agriculture,
+    Icons.stars,
+    Icons.wb_sunny,
+    Icons.wb_cloudy,
+    Icons.wb_incandescent,
+    Icons.wb_shade,
+    Icons.ac_unit,
+    Icons.air,
+    // Neue Icons passend zu Gewohnheiten
+    Icons.alarm,
+    Icons.accessibility,
+    Icons.rowing,
+    Icons.directions_walk,
+    Icons.nature,
+    Icons.volunteer_activism,
+    Icons.clean_hands,
+    Icons.fastfood,
+    Icons.cake,
+    Icons.shopping_cart,
+    Icons.attach_money,
+    Icons.lightbulb,
+    Icons.explore,
+    Icons.group,
+    Icons.share,
+    Icons.thumb_up,
+    Icons.question_mark,
+    Icons.announcement,
+    Icons.report,
+    Icons.settings,
+    Icons.help_outline,
+    Icons.sync,
+    Icons.replay,
+    Icons.forward,
+    Icons.reply,
+    Icons.download,
+    Icons.upload,
+    Icons.storage,
+    Icons.delete,
+    Icons.archive,
+    Icons.flag,
+    Icons.visibility,
+    Icons.visibility_off,
+    Icons.location_on,
+    Icons.notifications,
+    Icons.comment,
+    Icons.send,
+    Icons.call,
+    Icons.mail,
+    Icons.contacts,
+    Icons.camera_alt,
+    Icons.videocam,
+    Icons.mic,
+    Icons.volume_up,
+    Icons.volume_down,
   ];
 
   static Future<IconData?> showIconPicker(BuildContext context, {IconData? currentIcon}) async {
     IconData? selectedIcon = currentIcon;
-    
+
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -51,11 +128,11 @@ class CustomIconPicker {
                 width: double.maxFinite,
                 child: SingleChildScrollView(
                   child: Wrap(
-                    spacing: 12.0,
-                    runSpacing: 12.0,
+                    spacing: 10.0,
+                    runSpacing: 10.0,
                     children: _commonIcons.map((iconData) {
                       final bool isSelected = selectedIcon == iconData;
-                      
+
                       return GestureDetector(
                         onTap: () {
                           setState(() {
@@ -70,7 +147,7 @@ class CustomIconPicker {
                           ),
                           child: Icon(
                             iconData,
-                            size: 32.0,
+                            size: 28.0,
                             color: isSelected ? Colors.white : AppTheme.primaryColor,
                           ),
                         ),
@@ -94,7 +171,7 @@ class CustomIconPicker {
         );
       },
     );
-    
+
     return selectedIcon;
   }
 }
