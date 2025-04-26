@@ -23,6 +23,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
   flutter_lints: ^5.0.0
   hive_generator: ^2.0.1     # For Hive code generation
   build_runner: ^2.4.6       # For running code generators
@@ -32,3 +33,12 @@ flutter:
   
   # assets:
   #   - assets/images/
+
+# Flutter Launcher Icons Konfiguration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#FFFFFF" # Hintergrundfarbe für adaptive Icons
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  min_sdk_android: 21 # Mindest-SDK-Version für Android
