@@ -37,6 +37,21 @@ class HabitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCompleted = _isCompletedOnDate();
     final habitColor = habit.color ?? AppTheme.primaryColor;
+    final currentDate = date ?? DateTime.now();
+    
+    // Hole den wöchentlichen Fortschritt für X-mal-pro-Woche-Gewohnheiten
+    final isXTimesPerWeek = habit.frequency.type == FrequencyType.custom && 
+                           habit.frequency.customType == CustomFrequencyType.timesPerWeek;
+    
+    late int completedCount;
+    late int requiredCount;
+    
+    if (isXTimesPerWeek) {
+      final habitDatabase = HabitDatabase();
+      final status = habitDatabase.getWeeklyCompletionStatus(habit, currentDate);
+      completedCount = status.$1;
+      requiredCount = status.$2;
+    }
     
     return Card(
       color: isCompleted && isToday ? const Color.fromARGB(255, 212, 212, 212) : null, // Leicht ausgrauen bei erledigten Habits
@@ -124,11 +139,34 @@ class HabitCard extends StatelessWidget {
                         // Frequenz mit fester Breite und Ellipsis
                         SizedBox(
                           width: maxTextWidth,
-                          child: Text(
-                            habit.frequency.getDisplayText(),
-                            style: AppTheme.subtitleStyle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  habit.frequency.getDisplayText(),
+                                  style: AppTheme.subtitleStyle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              // Zeige den Fortschritt an, wenn es eine X-mal-pro-Woche-Gewohnheit ist
+                              if (isXTimesPerWeek)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: habitColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '$completedCount/$requiredCount',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: habitColor,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         if (habit.description.isNotEmpty) ...[
