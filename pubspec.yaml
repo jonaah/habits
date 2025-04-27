@@ -19,6 +19,7 @@ dependencies:
   flutter_iconpicker: ^4.0.1 # For picking icons
   table_calendar: ^3.0.9     # For calendar view
   path_provider: ^2.1.2      # For accessing device file paths
+  flutter_svg: ^2.0.9        # For SVG support
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +43,9 @@ flutter_launcher_icons:
   adaptive_icon_background: "#FFFFFF" # Hintergrundfarbe für adaptive Icons
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   min_sdk_android: 21 # Mindest-SDK-Version für Android
+  remove_alpha_ios: true # Entfernt Transparenz für iOS (empfohlen für App Store)
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
