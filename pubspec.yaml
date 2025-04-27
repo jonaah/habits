@@ -41,7 +41,7 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icon/habits_logo.png"
   adaptive_icon_background: "#FFFFFF" # Hintergrundfarbe für adaptive Icons
-  adaptive_icon_foreground: "assets/icon/habits_logo_copy.png"
+  adaptive_icon_foreground: "assets/icon/habits_logo.png"
   min_sdk_android: 21 # Mindest-SDK-Version für Android
   remove_alpha_ios: true # Entfernt Transparenz für iOS (empfohlen für App Store)
   web:
