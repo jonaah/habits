@@ -283,10 +283,12 @@ class StreakCalculator {
       // Ende der aktuellen Woche
       DateTime weekEnd = DateUtils.getEndOfWeek(currentWeekStart);
       
-      // Zähle Erledigungen in dieser Woche
-      int completionsThisWeek = normalizedDates.where(
+      // Sammle alle Erledigungen in dieser Woche
+      List<DateTime> completionsThisWeek = normalizedDates.where(
         (date) => DateUtils.isInCurrentWeek(date, currentWeekStart)
-      ).length;
+      ).toList();
+      
+      int completionsCount = completionsThisWeek.length;
       
       // Ist dies die aktuelle Woche?
       bool isCurrentWeek = DateUtils.isInCurrentWeek(today, currentWeekStart);
@@ -295,19 +297,21 @@ class StreakCalculator {
         // Für die aktuelle Woche: Prüfen, ob wir auf dem richtigen Weg sind
         // (genug Zeit, um die erforderlichen Erledigungen zu erreichen)
         int remainingDaysInWeek = DateUtils.getRemainingDaysInWeek(today);
-        int needed = timesPerWeek - completionsThisWeek;
+        int needed = timesPerWeek - completionsCount;
         
         if (needed <= remainingDaysInWeek) {
           // Wir können es noch schaffen oder haben es bereits geschafft
-          streakCount++;
+          // Zähle bereits gemachte Erledigungen in dieser Woche
+          streakCount += completionsCount;
         } else {
           // Nicht mehr genug Tage übrig, um das Ziel zu erreichen
           break;
         }
       } else {
-        // Vergangene Woche: Wir müssen genau X Erledigungen haben
-        if (completionsThisWeek >= timesPerWeek) {
-          streakCount++;
+        // Vergangene Woche: Wir müssen mindestens X Erledigungen haben
+        if (completionsCount >= timesPerWeek) {
+          // Erhöhe den Streak um die tatsächliche Anzahl der Erledigungen
+          streakCount += completionsCount;
         } else {
           // Nicht genug Erledigungen in dieser Woche
           break;

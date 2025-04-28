@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models/habit.dart';
 import '../services/habit_database.dart';
 import '../services/event_bus.dart';
@@ -109,59 +110,107 @@ class _AllHabitsScreenState extends State<AllHabitsScreen> {
       itemCount: _habits.length,
       itemBuilder: (context, index) {
         final habit = _habits[index];
-        return Dismissible(
-          key: Key(habit.id),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20.0),
-            color: Colors.red,
-            child: const Icon(
-              Icons.delete,
-              color: Colors.white,
-            ),
-          ),
-          confirmDismiss: (_) async {
-            return await showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Gewohnheit löschen'),
-                content: Text(
-                  'Möchtest du "${habit.title}" wirklich löschen?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Abbrechen'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text(
-                      'Löschen',
-                      style: TextStyle(color: Colors.red),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Slidable(
+            key: Key(habit.id),
+            endActionPane: ActionPane(
+              motion: const BehindMotion(),
+              extentRatio: 0.4, 
+              dismissible: DismissiblePane(
+                onDismissed: () => _deleteHabit(habit.id),
+                confirmDismiss: () async {
+                  final confirmDelete = await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Gewohnheit löschen'),
+                      content: Text(
+                          'Möchtest du "${habit.title}" wirklich löschen?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Abbrechen'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text(
+                            'Löschen',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                  return confirmDelete == true;
+                },
               ),
-            );
-          },
-          onDismissed: (_) => _deleteHabit(habit.id),
-          child: HabitCard(
-            habit: habit,
-            onToggle: (_) {}, // In der All Habits Screen ist die Toggle-Funktion nicht relevant
-            onEdit: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HabitFormScreen(habit: habit),
-                ),
-              );
+              children: [
+                CustomSlidableAction(
+                  onPressed: (BuildContext context) async {
+                    final confirmDelete = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Gewohnheit löschen'),
+                        content: Text(
+                            'Möchtest du "${habit.title}" wirklich löschen?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Abbrechen'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text(
+                              'Löschen',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
 
-              if (result == true) {
-                _loadHabits();
-              }
-            },
-            isEditable: true, // Explizit auf true setzen, obwohl das der Standardwert ist
-            isToday: false, // Keine Checkbox anzeigen in der All Habits Ansicht
+                    if (confirmDelete == true) {
+                      _deleteHabit(habit.id);
+                    }
+                  },
+                  padding: EdgeInsets.zero,
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  autoClose: true,
+                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.delete, size: 20, color: Colors.white),
+                      SizedBox(height: 4),
+                      Text(
+                        'Löschen',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            child: HabitCard(
+              habit: habit,
+              onToggle: (_) {}, // In der All Habits Screen ist die Toggle-Funktion nicht relevant
+              onEdit: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HabitFormScreen(habit: habit),
+                  ),
+                );
+
+                if (result == true) {
+                  _loadHabits();
+                }
+              },
+              isEditable: true, 
+              isToday: false, // Keine Checkbox anzeigen in der All Habits Ansicht
+            ),
           ),
         );
       },

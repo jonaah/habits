@@ -71,9 +71,9 @@ class HabitCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16.0),
-          // Konsistente Höhe definieren
+          // Festlegen einer konsistenten Höhe für das Slidable
           constraints: const BoxConstraints(
-            minHeight: 90, // Mindesthöhe für einheitliches Erscheinungsbild
+            minHeight: 80, // Reduzierte Mindesthöhe für kompaktere Darstellung
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start, // Ausrichtung am oberen Rand

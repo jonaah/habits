@@ -20,6 +20,7 @@ dependencies:
   table_calendar: ^3.0.9     # For calendar view
   path_provider: ^2.1.2      # For accessing device file paths
   flutter_svg: ^2.0.9        # For SVG support
+  flutter_slidable: ^3.0.1   # For better slidable widgets
 
 dev_dependencies:
   flutter_test:
