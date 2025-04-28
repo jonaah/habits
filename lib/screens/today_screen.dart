@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/habit.dart';
 import '../services/habit_database.dart';
 import '../services/event_bus.dart';
+import '../services/category_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_card.dart';
 import 'habit_form_screen.dart';
@@ -17,6 +18,7 @@ class TodayScreen extends StatefulWidget {
 class _TodayScreenState extends State<TodayScreen> {
   late HabitDatabase _database;
   late EventBus _eventBus;
+  late CategoryService _categoryService;
   List<Habit> _habits = [];
   bool _isLoading = true;
   
@@ -34,6 +36,7 @@ class _TodayScreenState extends State<TodayScreen> {
     super.initState();
     _database = HabitDatabase();
     _eventBus = EventBus();
+    _categoryService = CategoryService();
     _loadHabitsForDate(_selectedDate);
 
     // Listen for habit changes
@@ -87,23 +90,6 @@ class _TodayScreenState extends State<TodayScreen> {
     });
 
     final habits = _database.getHabitsForDate(date);
-
-    // Habits nach Erledigungsstatus sortieren (unerledigte zuerst, erledigte am Ende)
-    habits.sort((a, b) {
-      // Überprüfen, ob der Habit am selektierten Datum erledigt wurde
-      bool isACompleted = _database.isHabitCompletedOnDate(a, date);
-      bool isBCompleted = _database.isHabitCompletedOnDate(b, date);
-
-      // Wenn einer erledigt und der andere nicht erledigt ist, sortiere entsprechend
-      if (isACompleted && !isBCompleted) {
-        return 1; // A nach B sortieren (erledigte nach unten)
-      } else if (!isACompleted && isBCompleted) {
-        return -1; // A vor B sortieren (unerledigte nach oben)
-      }
-      
-      // Wenn beide den gleichen Status haben, sortiere alphabetisch nach Titel
-      return a.title.compareTo(b.title);
-    });
 
     setState(() {
       _habits = habits;
@@ -210,21 +196,159 @@ class _TodayScreenState extends State<TodayScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _habits.length,
-      itemBuilder: (context, index) {
-        final habit = _habits[index];
-        final isCompleted = _database.isHabitCompletedOnDate(habit, _selectedDate);
+    // Hole die sortierte Liste von Kategorien
+    final orderedCategories = _categoryService.getOrderedCategories();
+    
+    // Gruppiere Habits nach Kategorien und Erledigungsstatus
+    Map<String?, List<Habit>> uncompletedHabits = {};
+    List<Habit> completedHabits = [];
+    
+    // Füge eine Kategorie für Habits ohne Kategorie hinzu
+    uncompletedHabits[null] = [];
+    
+    // Trenne erledigte und unerledigte Habits
+    for (var habit in _habits) {
+      final isCompleted = _database.isHabitCompletedOnDate(habit, _selectedDate);
+      
+      if (isCompleted) {
+        // Alle erledigten Habits in eine separate Liste
+        completedHabits.add(habit);
+      } else {
+        // Unerledigte Habits nach Kategorien gruppieren
+        final category = habit.category;
         
-        return HabitCard(
-          habit: habit,
-          isToday: !_isFutureDate(_selectedDate), // Checkbox nur für Vergangenheit und Heute anzeigen
-          onToggle: (completed) => _toggleHabit(habit, completed),
-          date: _selectedDate,
-          isEditable: false, // Karten sind nicht bearbeitbar auf der TodayScreen
+        if (uncompletedHabits.containsKey(category)) {
+          uncompletedHabits[category]!.add(habit);
+        } else if (category != null) {
+          uncompletedHabits[category] = [habit];
+        } else {
+          uncompletedHabits[null]!.add(habit);
+        }
+      }
+    }
+    
+    // Sortiere alle Habits innerhalb jeder Kategorie alphabetisch nach Titel
+    uncompletedHabits.forEach((category, habits) {
+      habits.sort((a, b) => a.title.compareTo(b.title));
+    });
+    
+    // Sortiere erledigte Habits alphabetisch
+    completedHabits.sort((a, b) => a.title.compareTo(b.title));
+    
+    // Erstelle Liste von Widgets mit Kategorie-Überschriften und Habits
+    List<Widget> allWidgets = [];
+    
+    // Füge erst alle unerledigten Habits nach Kategorie hinzu
+    for (var category in orderedCategories) {
+      if (uncompletedHabits.containsKey(category) && uncompletedHabits[category]!.isNotEmpty) {
+        // Kategorie-Überschrift
+        allWidgets.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+            child: Text(
+              category,
+              style: AppTheme.titleStyle.copyWith(
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ),
         );
-      },
+        
+        // Habits dieser Kategorie
+        for (var habit in uncompletedHabits[category]!) {
+          allWidgets.add(_buildHabitItem(habit));
+        }
+        
+        // Entferne die verarbeitete Kategorie
+        uncompletedHabits.remove(category);
+      }
+    }
+    
+    // Füge alle unerledigten Habits ohne Kategorie hinzu (wenn vorhanden)
+    if (uncompletedHabits[null]!.isNotEmpty) {
+      allWidgets.add(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+          child: Text(
+            'Ohne Kategorie',
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      );
+      
+      for (var habit in uncompletedHabits[null]!) {
+        allWidgets.add(_buildHabitItem(habit));
+      }
+      
+      uncompletedHabits.remove(null);
+    }
+    
+    // Füge alle übrigen unerledigten Habits hinzu, die nicht in der Sortierreihenfolge definiert waren
+    for (var category in uncompletedHabits.keys) {
+      if (category != null && uncompletedHabits[category]!.isNotEmpty) {
+        // Kategorie-Überschrift
+        allWidgets.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+            child: Text(
+              category,
+              style: AppTheme.titleStyle.copyWith(
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ),
+        );
+        
+        // Habits dieser Kategorie
+        for (var habit in uncompletedHabits[category]!) {
+          allWidgets.add(_buildHabitItem(habit));
+        }
+      }
+    }
+    
+    // Füge erledigte Habits am Ende hinzu
+    if (completedHabits.isNotEmpty) {
+      allWidgets.add(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 8.0),
+          child: Text(
+            'Erledigt',
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
+            ),
+          ),
+        ),
+      );
+      
+      for (var habit in completedHabits) {
+        allWidgets.add(_buildHabitItem(habit));
+      }
+    }
+    
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 16),
+      children: allWidgets,
+    );
+  }
+
+  Widget _buildHabitItem(Habit habit) {
+    final isCompleted = _database.isHabitCompletedOnDate(habit, _selectedDate);
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      child: HabitCard(
+        habit: habit,
+        isToday: !_isFutureDate(_selectedDate), // Checkbox nur für Vergangenheit und Heute anzeigen
+        onToggle: (completed) => _toggleHabit(habit, completed),
+        date: _selectedDate,
+        isEditable: false, // Karten sind nicht bearbeitbar auf der TodayScreen
+      ),
     );
   }
 }

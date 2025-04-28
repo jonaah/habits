@@ -5,6 +5,7 @@ import '../models/habit.dart';
 class CategoryService {
   static const String _categoryBoxName = 'categories';
   static const String _habitBoxName = 'habits';
+  static const String _categoryOrderBoxName = 'category_order';
   
   // Singleton pattern
   static final CategoryService _instance = CategoryService._internal();
@@ -18,6 +19,7 @@ class CategoryService {
   /// Initialize the category service
   Future<void> init() async {
     await Hive.openBox<String>(_categoryBoxName);
+    await Hive.openBox<String>(_categoryOrderBoxName);
     // Import existing categories from habits after both boxes are opened
     await importCategoriesFromHabits();
   }
@@ -48,6 +50,43 @@ class CategoryService {
     return box.values.toList();
   }
   
+  /// Get categories in their custom order
+  List<String> getOrderedCategories() {
+    final allCategories = getAllCategories();
+    final orderBox = Hive.box<String>(_categoryOrderBoxName);
+    final orderedCategories = orderBox.values.toList();
+    
+    // Create a combined list with ordered categories first
+    final result = <String>[];
+    
+    // First, add all categories that are in the order box
+    for (var category in orderedCategories) {
+      if (allCategories.contains(category)) {
+        result.add(category);
+        // Remove from allCategories to avoid duplicates
+        allCategories.remove(category);
+      }
+    }
+    
+    // Then add any remaining categories that aren't in the order
+    result.addAll(allCategories);
+    
+    return result;
+  }
+  
+  /// Save the custom order of categories
+  Future<void> saveCategoryOrder(List<String> orderedCategories) async {
+    final orderBox = Hive.box<String>(_categoryOrderBoxName);
+    
+    // Clear existing order
+    await orderBox.clear();
+    
+    // Save new order
+    for (var category in orderedCategories) {
+      await orderBox.add(category);
+    }
+  }
+  
   /// Add a new category if it doesn't exist
   Future<void> addCategory(String category) async {
     final box = Hive.box<String>(_categoryBoxName);
@@ -62,11 +101,22 @@ class CategoryService {
   /// Delete a category
   Future<void> deleteCategory(String category) async {
     final box = Hive.box<String>(_categoryBoxName);
+    final orderBox = Hive.box<String>(_categoryOrderBoxName);
     final List<dynamic> keys = box.keys.toList();
     
+    // Remove from categories box
     for (var i = 0; i < box.length; i++) {
       if (box.get(keys[i]) == category) {
         await box.delete(keys[i]);
+        break;
+      }
+    }
+    
+    // Also remove from order box
+    final orderKeys = orderBox.keys.toList();
+    for (var i = 0; i < orderBox.length; i++) {
+      if (orderBox.get(orderKeys[i]) == category) {
+        await orderBox.delete(orderKeys[i]);
         break;
       }
     }
