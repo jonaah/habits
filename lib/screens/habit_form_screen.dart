@@ -4,6 +4,7 @@ import '../services/habit_database.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_icon_picker.dart';
 import '../widgets/custom_color_picker.dart';
+import '../widgets/category_selector.dart';
 
 class HabitFormScreen extends StatefulWidget {
   final Habit? habit;
@@ -20,11 +21,11 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
   final _descriptionController = TextEditingController();
   final _customDaysController = TextEditingController();
   final _dayOfMonthController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _timesPerWeekController = TextEditingController();
   
   IconData? _selectedIcon;
   Color? _selectedColor;
+  String? _selectedCategory;
   FrequencyType _frequencyType = FrequencyType.daily;
   final List<int> _selectedDays = [];
   int _customDays = 1;
@@ -47,10 +48,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
       _selectedIcon = habit.icon;
       _selectedColor = habit.color;
       _frequencyType = habit.frequency.type;
-      
-      if (habit.category != null) {
-        _categoryController.text = habit.category!;
-      }
+      _selectedCategory = habit.category;
       
       switch (_frequencyType) {
         case FrequencyType.daily:
@@ -82,7 +80,6 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
     _descriptionController.dispose();
     _customDaysController.dispose();
     _dayOfMonthController.dispose();
-    _categoryController.dispose();
     _timesPerWeekController.dispose();
     super.dispose();
   }
@@ -199,7 +196,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         _descriptionController.text,
         frequency,
         _selectedIcon,
-        _categoryController.text.isNotEmpty ? _categoryController.text : null,
+        _selectedCategory,
         widget.habit!.streak,
         widget.habit!.lastCompleted,
         List.from(widget.habit!.completedDates),
@@ -214,7 +211,7 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
         description: _descriptionController.text,
         frequency: frequency,
         icon: _selectedIcon,
-        category: _categoryController.text.isNotEmpty ? _categoryController.text : null,
+        category: _selectedCategory,
         color: _selectedColor,
       );
       
@@ -383,13 +380,14 @@ class _HabitFormScreenState extends State<HabitFormScreen> {
               ),
               const SizedBox(height: 16),
               
-              // Category
-              TextFormField(
-                controller: _categoryController,
-                decoration: const InputDecoration(
-                  labelText: 'Kategorie (optional)',
-                  border: OutlineInputBorder(),
-                ),
+              // Category Selector
+              CategorySelector(
+                selectedCategory: _selectedCategory,
+                onCategorySelected: (category) {
+                  setState(() {
+                    _selectedCategory = category;
+                  });
+                },
               ),
               const SizedBox(height: 24),
               

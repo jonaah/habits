@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:habits/screens/calendar_screen.dart';
+import 'package:habits/services/category_service.dart';
 import 'package:habits/services/habit_database.dart';
 import 'package:habits/screens/all_habits_screen.dart';
 import 'package:habits/screens/today_screen.dart';
@@ -34,6 +35,10 @@ void main() async {
   // Initialize the database
   final habitDatabase = HabitDatabase();
   await habitDatabase.init();
+  
+  // Initialize the category service
+  final categoryService = CategoryService();
+  await categoryService.init();
   
   runApp(const MyApp());
 }
