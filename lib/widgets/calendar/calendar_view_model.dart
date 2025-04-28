@@ -7,7 +7,7 @@ import '../../theme/app_theme.dart';
 /// Calendar view model für State Management
 class CalendarViewModel {
   bool isLoading = true;
-  CalendarViewType viewType = CalendarViewType.year;
+  CalendarViewType viewType = CalendarViewType.month;
   DateTime focusDate = DateTime.now();
   
   // Filter options
