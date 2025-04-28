@@ -14,6 +14,7 @@ class CalendarViewModel {
   Habit? selectedHabit;
   IconData? selectedIcon;
   Color? selectedColor;
+  String? selectedCategory;  // Added category filter
   
   List<Habit> habits = [];
   List<Habit> filteredHabits = [];
@@ -52,13 +53,16 @@ class CalendarViewModel {
     final matchesHabit = selectedHabit == null || habit.id == selectedHabit!.id;
     final matchesIcon = selectedIcon == null || habit.icon == selectedIcon;
     final matchesColor = selectedColor == null || habit.color?.value == selectedColor?.value;
-    return matchesHabit && matchesIcon && matchesColor;
+    final matchesCategory = selectedCategory == null || habit.category == selectedCategory;  // Added category filter check
+    
+    return matchesHabit && matchesIcon && matchesColor && matchesCategory;
   }
 
   void resetFilters() {
     selectedHabit = null;
     selectedIcon = null;
     selectedColor = null;
+    selectedCategory = null;  // Reset category filter
     filteredHabits = habits;
   }
 
@@ -122,7 +126,7 @@ class CalendarViewModel {
   }
 
   bool get hasActiveFilters => 
-    selectedHabit != null || selectedIcon != null || selectedColor != null;
+    selectedHabit != null || selectedIcon != null || selectedColor != null || selectedCategory != null;  // Include category in active filters check
 
   List<IconData> getUniqueIcons() {
     return habits
@@ -136,6 +140,15 @@ class CalendarViewModel {
     return habits
       .where((habit) => habit.color != null)
       .map((habit) => habit.color!)
+      .toSet()
+      .toList();
+  }
+
+  // Get unique categories from habits
+  List<String> getUniqueCategories() {
+    return habits
+      .where((habit) => habit.category != null && habit.category!.isNotEmpty)
+      .map((habit) => habit.category!)
       .toSet()
       .toList();
   }

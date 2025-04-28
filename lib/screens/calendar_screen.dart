@@ -63,7 +63,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Center(child: Text('Kalender')),
+      title: const Text('Kalender'),
       centerTitle: true,
       actions: [
         IconButton(
@@ -165,6 +165,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         selectedHabit: _viewModel.selectedHabit,
         selectedIcon: _viewModel.selectedIcon,
         selectedColor: _viewModel.selectedColor,
+        selectedCategory: _viewModel.selectedCategory,
         onHabitSelected: (habit) {
           _viewModel.selectedHabit = habit;
           _viewModel.applyFilters();
@@ -177,6 +178,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         },
         onColorSelected: (color) {
           _viewModel.selectedColor = color;
+          _viewModel.applyFilters();
+          setState(() {});
+        },
+        onCategorySelected: (category) {
+          _viewModel.selectedCategory = category;
           _viewModel.applyFilters();
           setState(() {});
         },
@@ -200,6 +206,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
               label: _viewModel.selectedHabit!.title,
               onDeleted: () {
                 _viewModel.selectedHabit = null;
+                _viewModel.applyFilters();
+                setState(() {});
+              },
+            ),
+          if (_viewModel.selectedCategory != null)
+            _buildFilterChip(
+              label: "Kategorie: ${_viewModel.selectedCategory}",
+              onDeleted: () {
+                _viewModel.selectedCategory = null;
                 _viewModel.applyFilters();
                 setState(() {});
               },

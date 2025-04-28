@@ -8,9 +8,11 @@ class CalendarFilterDialog extends StatelessWidget {
   final Habit? selectedHabit;
   final IconData? selectedIcon;
   final Color? selectedColor;
+  final String? selectedCategory; // Added category parameter
   final Function(Habit?) onHabitSelected;
   final Function(IconData?) onIconSelected;
   final Function(Color?) onColorSelected;
+  final Function(String?) onCategorySelected; // Added category callback
   final VoidCallback onResetFilters;
 
   const CalendarFilterDialog({
@@ -19,9 +21,11 @@ class CalendarFilterDialog extends StatelessWidget {
     required this.selectedHabit,
     required this.selectedIcon,
     required this.selectedColor,
+    required this.selectedCategory, // Added required parameter
     required this.onHabitSelected,
     required this.onIconSelected,
     required this.onColorSelected,
+    required this.onCategorySelected, // Added required callback
     required this.onResetFilters,
   }) : super(key: key);
 
@@ -36,6 +40,8 @@ class CalendarFilterDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHabitFilter(context),
+            const SizedBox(height: 16),
+            _buildCategoryFilter(context), // Added category filter
             const SizedBox(height: 16),
             _buildIconFilter(context),
             const SizedBox(height: 16),
@@ -85,6 +91,41 @@ class CalendarFilterDialog extends StatelessWidget {
               ? habits.firstWhere((h) => h.id == habitId)
               : null;
             onHabitSelected(selectedHabit);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryFilter(BuildContext context) {
+    final uniqueCategories = _getUniqueCategories(habits);
+    
+    if (uniqueCategories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Nach Kategorie filtern:'),
+        const SizedBox(height: 8),
+        DropdownButton<String>(
+          isExpanded: true,
+          hint: const Text('Kategorie auswählen'),
+          value: selectedCategory,
+          items: [
+            const DropdownMenuItem<String>(
+              value: null,
+              child: Text('Alle Kategorien'),
+            ),
+            ...uniqueCategories.map((category) => DropdownMenuItem<String>(
+              value: category,
+              child: Text(category),
+            )).toList(),
+          ],
+          onChanged: (String? category) {
+            Navigator.pop(context);
+            onCategorySelected(category);
           },
         ),
       ],
@@ -167,6 +208,14 @@ class CalendarFilterDialog extends StatelessWidget {
     return habits
       .where((habit) => habit.color != null)
       .map((habit) => habit.color!)
+      .toSet()
+      .toList();
+  }
+
+  List<String> _getUniqueCategories(List<Habit> habits) {
+    return habits
+      .where((habit) => habit.category != null && habit.category!.isNotEmpty)
+      .map((habit) => habit.category!)
       .toSet()
       .toList();
   }
